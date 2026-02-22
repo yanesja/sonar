@@ -1,0 +1,169 @@
+# =============================================================================
+# Python
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+.installed.cfg
+MANIFEST
+
+# =============================================================================
+# Virtual environments
+# =============================================================================
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+
+# =============================================================================
+# Environment variables / secrets
+# =============================================================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+credentials/
+
+# =============================================================================
+# Data science
+# =============================================================================
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Data files — keep structure, ignore content
+data/raw/*
+data/interim/*
+data/processed/*
+data/external/*
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+!data/external/.gitkeep
+
+# Common data formats
+*.csv
+*.tsv
+*.parquet
+*.feather
+*.arrow
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.npy
+*.npz
+*.jsonl
+
+# Model artifacts
+models/*
+!models/.gitkeep
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.bin
+
+# =============================================================================
+# LLM / agent specific
+# =============================================================================
+
+# LangSmith / Langfuse local config
+.langsmith
+langfuse.json
+
+# Local agent memory / checkpoints
+checkpoints/
+memory/
+*.checkpoint
+
+# Prompt caches
+.cache/
+prompt_cache/
+
+# =============================================================================
+# Testing
+# =============================================================================
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+*.cover
+.hypothesis/
+test-results/
+
+# =============================================================================
+# Editors / IDEs
+# =============================================================================
+
+# VSCode
+.vscode/
+!.vscode/extensions.json
+
+# PyCharm
+.idea/
+
+# Vim
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# =============================================================================
+# Logs / output
+# =============================================================================
+logs/
+*.log
+*.out
+output/
+outputs/
+results/
+runs/
+
+# =============================================================================
+# Documentation builds
+# =============================================================================
+docs/_build/
+docs/site/
+site/
+
+# =============================================================================
+# Packaging / deployment
+# =============================================================================
+*.tar.gz
+*.zip
+.terraform/
+*.tfstate
+*.tfstate.backup
