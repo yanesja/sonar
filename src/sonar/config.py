@@ -40,12 +40,12 @@ class Config(BaseModel):
     # Agent behavior
     max_tool_calls_per_run: int = Field(default=3)
 
-    # Paths (relative to project root)
+    # Paths (relative to ect root)
     prompts_file: str = Field(default="src/sonar/prompts/system.yaml")
 
     @classmethod
     def project_root(cls) -> Path:
-        """Project root — two levels up from this file (src/sonar/config.py)."""
+        """Project root - two levels up from this file (src/sonar/config.py)."""
         return Path(__file__).parent.parent.parent
 
     @classmethod
