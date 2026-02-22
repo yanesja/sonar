@@ -13,7 +13,7 @@ from langchain.agents.middleware import (
     SummarizationMiddleware,
     ToolCallLimitMiddleware,
 )
-from langchain_anthropic import ChatAnthropic
+from langchain_groq import ChatGroq
 from langgraph.checkpoint.memory import InMemorySaver
 
 from .config import Config
@@ -47,7 +47,7 @@ class SonarAgent:
         self.config = config or Config()
         self.thread_id = thread_id
 
-        model = ChatAnthropic(
+        model = ChatGroq(
             model=self.config.model_id,
             temperature=self.config.temperature,
         )
