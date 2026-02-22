@@ -114,13 +114,8 @@ class SonarAgent:
 
                 reply = result["messages"][-1].content
 
-                # Token usage — print per turn to observe context growth
-                usage = result["messages"][-1].usage_metadata
-                if usage:
-                    print(f"\nAssistant: {reply}")
-                    print(f"\n  [tokens — in: {usage.get('input_tokens', '?')}, out: {usage.get('output_tokens', '?')}]\n")
-                else:
-                    print(f"\nAssistant: {reply}\n")
+                # Print response
+                print(f"\nAssistant: {reply}\n")
 
             except KeyboardInterrupt:
                 print("\n\nGoodbye! 🐋")
