@@ -38,11 +38,13 @@ class Config(BaseModel):
     temperature: float = 0.0
     max_tool_calls_per_run: int = 3
 
-    # Agent behavior
-    max_tool_calls_per_run: int = Field(default=3)
+    # Paths (relative to project root)
+    prompts_file: str = "src/sonar/prompts/system.yaml"
 
-    # Paths (relative to ect root)
-    prompts_file: str = Field(default="src/sonar/prompts/system.yaml")
+    # Observability
+    langfuse_public_key: str | None = None
+    langfuse_secret_key: str | None = None
+    langfuse_host: str = "https://cloud.langfuse.com"
 
     @classmethod
     def project_root(cls) -> Path:
@@ -51,16 +53,12 @@ class Config(BaseModel):
 
     @classmethod
     def from_env(cls) -> "Config":
-        """
-        Build Config from environment variables.
-        Optional vars fall back to field defaults if not set.
-
-        Example:
-            config = Config.from_env()
-        """
         return cls(
-            model_id=_require("MODEL_ID"),
+            model_id=os.environ.get("MODEL_ID", "llama-3.3-70b-versatile"),
             temperature=float(os.environ.get("TEMPERATURE", 0)),
             max_tool_calls_per_run=int(os.environ.get("MAX_TOOL_CALLS_PER_RUN", 3)),
             prompts_file=os.environ.get("PROMPTS_FILE", "src/sonar/prompts/system.yaml"),
+            langfuse_public_key=os.environ.get("LANGFUSE_PUBLIC_KEY"),
+            langfuse_secret_key=os.environ.get("LANGFUSE_SECRET_KEY"),
+            langfuse_host=os.environ.get("LANGFUSE_HOST", "https://cloud.langfuse.com"),
         )

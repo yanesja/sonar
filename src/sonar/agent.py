@@ -15,6 +15,7 @@ from langchain.agents.middleware import (
 )
 from langchain_groq import ChatGroq
 from langgraph.checkpoint.memory import InMemorySaver
+from langfuse.callback import CallbackHandler
 
 from .config import Config
 from .tools import execute_sighting_request
@@ -71,6 +72,16 @@ class SonarAgent:
             checkpointer=InMemorySaver(),
         )
 
+        # Langfuse tracing — optional, skipped if keys not set
+        self._langfuse_handler = None
+        if self.config.langfuse_public_key and self.config.langfuse_secret_key:
+            self._langfuse_handler = CallbackHandler(
+                public_key=self.config.langfuse_public_key,
+                secret_key=self.config.langfuse_secret_key,
+                host=self.config.langfuse_host,
+                session_id=self.thread_id,
+            )
+
     async def __aenter__(self):
         return self
 
@@ -79,7 +90,7 @@ class SonarAgent:
 
     async def chat_loop(self):
         """Interactive CLI chat loop. Run via scripts/chat.py."""
-        print("🐋 Sonar — Marine mammal sightings from The Whale Museum")
+        print("   Sonar — Chatbot for marine mammal sightings data from The Whale Museum")
         print("   Data: http://hotline.whalemuseum.org")
         print(f"   Thread: {self.thread_id}")
         print("   Commands: 'exit' to quit, 'new' to start a new thread")
@@ -95,21 +106,29 @@ class SonarAgent:
                 user_input = user_input.strip()
 
                 if user_input.lower() in {"exit", "quit"}:
-                    print("\nGoodbye! 🐋")
+                    print("\nGoodbye!")
                     break
 
                 if user_input.lower() == "new":
                     self.thread_id = str(uuid.uuid4())
                     config = {"configurable": {"thread_id": self.thread_id}}
+                    if self._langfuse_handler:
+                        self._langfuse_handler = CallbackHandler(
+                            public_key=self.config.langfuse_public_key,
+                            secret_key=self.config.langfuse_secret_key,
+                            host=self.config.langfuse_host,
+                            session_id=self.thread_id,
+                        )
                     print(f"\n[New conversation: {self.thread_id}]\n")
                     continue
 
                 if not user_input:
                     continue
 
+                callbacks = [self._langfuse_handler] if self._langfuse_handler else []
                 result = await self.agent.ainvoke(
                     {"messages": [{"role": "user", "content": user_input}]},
-                    config,
+                    {**config, "callbacks": callbacks},
                 )
 
                 reply = result["messages"][-1].content
