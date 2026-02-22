@@ -1,0 +1,132 @@
+"""
+agent.py - Sonar agent.
+
+Single agent that handles UX, intent clarification, request construction,
+tool execution, and response formatting. Mirrors ConnectChat architecture.
+"""
+
+import asyncio
+import uuid
+
+from langchain.agents import create_agent
+from langchain.agents.middleware import (
+    SummarizationMiddleware,
+    ToolCallLimitMiddleware,
+)
+from langchain_anthropic import ChatAnthropic
+from langgraph.checkpoint.memory import InMemorySaver
+
+from .config import Config
+from .tools import execute_sighting_request
+
+
+def _load_system_prompt(config: Config) -> str:
+    """Load system prompt from YAML file."""
+    import yaml
+
+    with open(config.prompts_file, "r") as f:
+        prompts = yaml.safe_load(f)
+    return prompts["system_prompt"]
+
+
+class SonarAgent:
+    """
+    Single-agent conversational assistant for querying the Whale Hotline API.
+
+    Mirrors ConnectChat architecture as a baseline for architectural exploration.
+
+    Example:
+        async with SonarAgent() as agent:
+            result = await agent.agent.ainvoke(
+                {"messages": [{"role": "user", "content": "Any J pod sightings?"}]},
+                {"configurable": {"thread_id": "user-123"}}
+            )
+    """
+
+    def __init__(self, config: Config | None = None, thread_id: str = "default"):
+        self.config = config or Config()
+        self.thread_id = thread_id
+
+        model = ChatAnthropic(
+            model=self.config.model_id,
+            temperature=self.config.temperature,
+        )
+
+        system_prompt = _load_system_prompt(self.config)
+
+        self.agent = create_agent(
+            model=model,
+            tools=[execute_sighting_request],
+            system_prompt=system_prompt,
+            middleware=[
+                ToolCallLimitMiddleware(
+                    run_limit=self.config.max_tool_calls_per_run,
+                    exit_behavior="end",
+                ),
+                SummarizationMiddleware(
+                    model=model,
+                    summary_prompt="Summarize the conversation including any species or sightings discussed, filters used, and results returned. Keep any important context for follow-up questions.",
+                ),
+            ],
+            checkpointer=InMemorySaver(),
+        )
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+    async def chat_loop(self):
+        """Interactive CLI chat loop. Run via scripts/chat.py."""
+        print("🐋 Sonar — Marine mammal sightings from The Whale Museum")
+        print("   Data: http://hotline.whalemuseum.org")
+        print(f"   Thread: {self.thread_id}")
+        print("   Commands: 'exit' to quit, 'new' to start a new thread")
+        print("-" * 60 + "\n")
+
+        config = {"configurable": {"thread_id": self.thread_id}}
+
+        while True:
+            try:
+                user_input = await asyncio.get_event_loop().run_in_executor(
+                    None, lambda: input("You: ")
+                )
+                user_input = user_input.strip()
+
+                if user_input.lower() in {"exit", "quit"}:
+                    print("\nGoodbye! 🐋")
+                    break
+
+                if user_input.lower() == "new":
+                    self.thread_id = str(uuid.uuid4())
+                    config = {"configurable": {"thread_id": self.thread_id}}
+                    print(f"\n[New conversation: {self.thread_id}]\n")
+                    continue
+
+                if not user_input:
+                    continue
+
+                result = await self.agent.ainvoke(
+                    {"messages": [{"role": "user", "content": user_input}]},
+                    config,
+                )
+
+                reply = result["messages"][-1].content
+
+                # Token usage — print per turn to observe context growth
+                usage = result["messages"][-1].usage_metadata
+                if usage:
+                    print(f"\nAssistant: {reply}")
+                    print(f"\n  [tokens — in: {usage.get('input_tokens', '?')}, out: {usage.get('output_tokens', '?')}]\n")
+                else:
+                    print(f"\nAssistant: {reply}\n")
+
+            except KeyboardInterrupt:
+                print("\n\nGoodbye! 🐋")
+                break
+            except Exception as e:
+                print(f"\nError: {e}\n")
+
+def main():
+    asyncio.run(async_main())
