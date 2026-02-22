@@ -34,8 +34,9 @@ def _require(name: str) -> str:
 
 class Config(BaseModel):
     # Model
-    model_id: str = Field(default_factory=lambda: _require("MODEL_ID"))
-    temperature: float = Field(default=0)
+    model_id: str = "llama-3.3-70b-versatile"
+    temperature: float = 0.0
+    max_tool_calls_per_run: int = 3
 
     # Agent behavior
     max_tool_calls_per_run: int = Field(default=3)
