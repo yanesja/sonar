@@ -15,7 +15,7 @@ from langchain.agents.middleware import (
 )
 from langchain_groq import ChatGroq
 from langgraph.checkpoint.memory import InMemorySaver
-from langfuse.callback import CallbackHandler
+from langfuse.langchain import CallbackHandler
 
 from .config import Config
 from .tools import execute_sighting_request
