@@ -1,17 +1,15 @@
 """
 config.py - Sonar configuration.
 
-Pydantic model for agent configuration. Mirrors ConnectChat Config pattern.
-Values are loaded from environment variables via python-dotenv.
-
 Required environment variables:
-    ANTHROPIC_API_KEY       Anthropic API key
-    MODEL_ID                Model identifier, e.g. claude-3-5-haiku-20241022
+    MODEL_ID                Model identifier, e.g. llama-3.3-70b-versatile
 
 Optional environment variables (defaults shown):
     TEMPERATURE             Model temperature (default: 0)
     MAX_TOOL_CALLS_PER_RUN  Tool call limit per invocation (default: 3)
     PROMPTS_FILE            Path to prompts YAML, relative to project root
+
+Note: GROQ_API_KEY is required but read directly by ChatGroq — not managed here.
 """
 
 import os
