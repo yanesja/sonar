@@ -45,7 +45,7 @@ class SonarAgent:
     """
 
     def __init__(self, config: Config | None = None, thread_id: str = "default"):
-        self.config = config or Config()
+        self.config = config or Config.from_env()
         self.thread_id = thread_id
 
         model = ChatGroq(
@@ -75,12 +75,7 @@ class SonarAgent:
         # Langfuse tracing — optional, skipped if keys not set
         self._langfuse_handler = None
         if self.config.langfuse_public_key and self.config.langfuse_secret_key:
-            self._langfuse_handler = CallbackHandler(
-                public_key=self.config.langfuse_public_key,
-                secret_key=self.config.langfuse_secret_key,
-                host=self.config.langfuse_host,
-                session_id=self.thread_id,
-            )
+            self._langfuse_handler = CallbackHandler()
 
     async def __aenter__(self):
         return self
@@ -113,12 +108,7 @@ class SonarAgent:
                     self.thread_id = str(uuid.uuid4())
                     config = {"configurable": {"thread_id": self.thread_id}}
                     if self._langfuse_handler:
-                        self._langfuse_handler = CallbackHandler(
-                            public_key=self.config.langfuse_public_key,
-                            secret_key=self.config.langfuse_secret_key,
-                            host=self.config.langfuse_host,
-                            session_id=self.thread_id,
-                        )
+                        self._langfuse_handler = CallbackHandler()
                     print(f"\n[New conversation: {self.thread_id}]\n")
                     continue
 
