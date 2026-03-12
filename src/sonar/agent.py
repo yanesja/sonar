@@ -85,8 +85,8 @@ class SonarAgent:
 
     async def chat_loop(self):
         """Interactive CLI chat loop. Run via scripts/chat.py."""
-        print("   Sonar — Chatbot for marine mammal sightings data from The Whale Museum")
-        print("   Data: http://hotline.whalemuseum.org")
+        print("   Sonar — Chatbot for marine mammal sightings data from iNaturalist")
+        print("   Data: https://www.inaturalist.org")
         print(f"   Thread: {self.thread_id}")
         print("   Commands: 'exit' to quit, 'new' to start a new thread")
         print("-" * 60 + "\n")

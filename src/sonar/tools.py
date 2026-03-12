@@ -10,15 +10,52 @@ import json
 import httpx
 from langchain_core.tools import tool
 
+# Fields to keep from each observation record — keeps tool responses token-efficient
+_OBSERVATION_FIELDS = (
+    "id",
+    "observed_on",
+    "place_guess",
+    "quality_grade",
+    "uri",
+    "taxon_name",
+    "taxon_common_name",
+    "individual_count",
+    "description",
+    "latitude",
+    "longitude",
+)
+
+
+def _trim_observation(obs: dict) -> dict:
+    """Pull the fields we care about from a raw iNaturalist observation record."""
+    taxon = obs.get("taxon") or {}
+
+    # location is a "lat,lon" string — split it out
+    location_str = obs.get("location")
+    lat, lon = location_str.split(",") if location_str else (None, None)
+
+    return {
+        "id": obs.get("id"),
+        "observed_on": obs.get("observed_on"),
+        "place_guess": obs.get("place_guess"),
+        "quality_grade": obs.get("quality_grade"),
+        "uri": obs.get("uri"),
+        "taxon_name": taxon.get("name"),
+        "taxon_common_name": taxon.get("preferred_common_name"),
+        "description": obs.get("description"),
+        "latitude": lat,
+        "longitude": lon,
+    }
+
 
 @tool
 async def execute_sighting_request(url: str) -> str:
     """
-    Execute a Whale Hotline API request and return results.
+    Execute an iNaturalist API request and return results.
 
     Args:
         url: Complete URL with query parameters already constructed.
-             Example: "http://hotline.whalemuseum.org/api.json?species=orca&limit=5"
+             Example: "https://api.inaturalist.org/v1/observations?taxon_name=Orcinus+orca&per_page=5"
 
     Returns:
         JSON string with sighting data or error message.
@@ -29,34 +66,42 @@ async def execute_sighting_request(url: str) -> str:
             response.raise_for_status()
             data = response.json()
 
-        # Count endpoint returns a plain int — wrap it
-        if isinstance(data, int):
-            return json.dumps({"success": True, "count": data})
+        total = data.get("total_results")
+        results = data.get("results", [])
 
-        # Sightings list — trim fields to keep tokens low
-        if isinstance(data, list):
-            trimmed = [
-                {
-                    "id": s.get("id"),
-                    "species": s.get("species"),
-                    "quantity": s.get("quantity"),
-                    "orca_type": s.get("orca_type"),
-                    "pod": s.get("pod"),
-                    "description": s.get("description"),
-                    "sighted_at": s.get("sighted_at"),
-                    "location": s.get("location"),
-                    "latitude": s.get("latitude"),
-                    "longitude": s.get("longitude"),
-                }
-                for s in data
-            ]
+        # Histogram endpoint — results is a dict keyed by interval (e.g. "year")
+        if isinstance(results, dict):
+            return json.dumps({"success": True, "total_results": total, "histogram": results})
+
+        # Count-only query (per_page=0) — just return the total
+        if not results:
+            return json.dumps({"success": True, "total_results": total})
+
+        # Observation list — trim each record to keep tokens low
+        if isinstance(results, list) and results and isinstance(results[0], dict):
+            # Species counts endpoint returns {count, taxon} dicts, not observation dicts
+            if "taxon" in results[0]:
+                trimmed = [
+                    {
+                        "taxon_name": r["taxon"].get("name"),
+                        "common_name": r["taxon"].get("preferred_common_name"),
+                        "count": r.get("count"),
+                    }
+                    for r in results
+                ]
+                return json.dumps(
+                    {"success": True, "total_results": total, "species_counts": trimmed},
+                    indent=2,
+                )
+
+            # Standard observation records
+            trimmed = [_trim_observation(obs) for obs in results]
             return json.dumps(
-                {"success": True, "count": len(trimmed), "sightings": trimmed},
+                {"success": True, "total_results": total, "observations": trimmed},
                 indent=2,
             )
 
-        # Single sighting object
-        return json.dumps({"success": True, "sighting": data}, indent=2)
+        return json.dumps({"success": True, "total_results": total, "results": results})
 
     except httpx.HTTPStatusError as e:
         return json.dumps(
