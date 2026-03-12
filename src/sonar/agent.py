@@ -130,7 +130,8 @@ class SonarAgent:
                 print("\n\nGoodbye! 🐋")
                 break
             except Exception as e:
-                print(f"\nError: {e}\n")
+                import traceback
+                traceback.print_exc()
 
 def main():
     asyncio.run(async_main())

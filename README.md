@@ -2,6 +2,27 @@
 
 Conversational agent framework for querying structured data sources via natural language.
 
+## Setup
+
+```bash
+# Create and activate virtual environment
+uv venv
+source .venv/bin/activate
+
+# Install dependencies
+uv pip install -e .
+
+# Configure environment
+cp .env.example .env
+# Edit .env and add your credentials
+```
+
+## Run
+
+```bash
+python scripts/chat.py
+```
+
 ## Structure
 
 ```
