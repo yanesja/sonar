@@ -18,8 +18,9 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langfuse.langchain import CallbackHandler
 
 from .config import Config
-from .tools import execute_sighting_request
 
+from pathlib import Path
+from langchain_mcp_adapters.client import MultiServerMCPClient
 
 def _load_system_prompt(config: Config) -> str:
     """Load system prompt from YAML file."""
@@ -57,7 +58,17 @@ class SonarAgent:
 
         self.agent = create_agent(
             model=model,
-            tools=[execute_sighting_request],
+
+            server_path=Path(__file__).parent / "server.py"
+            mcp_client = MultiServerMCPClient({
+                "sonar": {
+                    "command": "python",
+                    "args": [str(server_path)],
+                    "transport": "stdio",
+                }
+            })
+            tools = await mcp_client.get_tools()
+
             system_prompt=system_prompt,
             middleware=[
                 ToolCallLimitMiddleware(
